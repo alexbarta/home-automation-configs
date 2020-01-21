@@ -220,6 +220,7 @@ def update_event_name(event, analysis, filters, dry_run=False):
 
 def handle_event(event_id, monitor_id, cause, dry_run=False):
     event = ZMEvent(event_id, monitor_id, cause)
+    print(event)
     # ensure that this command is run by the user that owns the event
     evt_owner = os.stat(event.path).st_uid
     if os.geteuid() != evt_owner:
@@ -319,8 +320,8 @@ def run(args):
 
 def main():
     # setsid so we can continue running even if caller dies
-    if os.environ.get('NO_SETSID', None) != 'true':
-        os.setsid()
+    #if os.environ.get('NO_SETSID', None) != 'true':
+    #    os.setsid()
     # populate secrets from environment variables
     populate_secrets()
     # parse command line arguments

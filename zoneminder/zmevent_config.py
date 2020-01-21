@@ -22,7 +22,7 @@ MIN_LOG_LEVEL = 1
 ANALYSIS_TABLE_NAME = 'zmevent_handler_ImageAnalysis'
 
 #: Path on disk where ZoneMinder events are stored
-EVENTS_PATH = '/usr/share/zoneminder/www/events'
+EVENTS_PATH = '/zoneminder/events'
 
 #: Name of the event to send homeassistant
 HASS_EVENT_NAME = 'ZM_ALARM'
@@ -31,14 +31,15 @@ HASS_EVENT_NAME = 'ZM_ALARM'
 HASS_SECRETS_PATH = '/opt/homeassistant/.homeassistant/secrets.yaml'
 
 #: Hostname for this instance
-ZM_HOSTNAME = 'guarddog'
+ZM_HOSTNAME = 'web'
 
 #: Configuration populated from environment variables; see
 #: :py:func:`~.populate_secrets`
 CONFIG = {
-    'MYSQL_DB': None,
-    'MYSQL_USER': None,
-    'MYSQL_PASS': None,
+    'ZM_HOST_DB': 'db',
+    'MYSQL_DB': 'zm' ,
+    'MYSQL_USER': 'zmuser',
+    'MYSQL_PASS': 'zmpass',
     'BASE_URL': 'http://redirect.jasonantman.com/zm/',
     'LOCAL_ZM_URL': 'http://localhost/zm/',
     'HASS_API_URL': 'http://localhost:8123/api',

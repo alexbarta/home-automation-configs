@@ -209,7 +209,7 @@ class ZMEvent(object):
         self.path = None
 
         self._conn = pymysql.connect(
-            host='localhost', user=CONFIG['MYSQL_USER'],
+            host=CONFIG['ZM_HOST_DB'], user=CONFIG['MYSQL_USER'],
             password=CONFIG['MYSQL_PASS'], db=CONFIG['MYSQL_DB'],
             charset='utf8mb4', cursorclass=pymysql.cursors.DictCursor
         )
@@ -314,7 +314,7 @@ class ZMEvent(object):
         for k, v in res.items():
             if hasattr(self, k):
                 setattr(self, k, v)
-        if ZM_HOSTNAME == 'guarddog':
+        if ZM_HOSTNAME == 'web':
             self.path = os.path.join(
                 EVENTS_PATH, '%s' % self.MonitorId,
                 self.StartTime.strftime('%y/%m/%d/%H/%M/%S')

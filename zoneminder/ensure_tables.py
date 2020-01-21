@@ -17,7 +17,7 @@ logger = logging.getLogger()
 def ensure_table():
     populate_secrets()
     conn = pymysql.connect(
-        host='localhost', user=CONFIG['MYSQL_USER'],
+        host=CONFIG['ZM_HOST_DB'], user=CONFIG['MYSQL_USER'],
         password=CONFIG['MYSQL_PASS'], db=CONFIG['MYSQL_DB'],
         charset='utf8mb4', cursorclass=pymysql.cursors.DictCursor
     )
