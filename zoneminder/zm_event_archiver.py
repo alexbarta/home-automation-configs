@@ -38,7 +38,7 @@ class ZmEventArchiver(object):
             self._base_url += '/'
         logger.debug('Connecting to MySQL')
         self._conn = pymysql.connect(
-            host='localhost', user=os.environ['MYSQL_USER'],
+            host='db', user=os.environ['MYSQL_USER'],
             password=os.environ['MYSQL_PASS'], db=os.environ['MYSQL_DB'],
             charset='utf8mb4', cursorclass=pymysql.cursors.DictCursor
         )

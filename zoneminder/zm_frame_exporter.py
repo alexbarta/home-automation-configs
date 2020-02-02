@@ -40,7 +40,7 @@ class ZmFrameExporter(object):
     def __init__(self, mysql_user, mysql_pass, mysql_db):
         logger.debug('Connecting to MySQL')
         self._conn = pymysql.connect(
-            host='localhost', user=mysql_user,
+            host='db', user=mysql_user,
             password=mysql_pass, db=mysql_db,
             charset='utf8mb4', cursorclass=pymysql.cursors.DictCursor
         )

@@ -19,7 +19,7 @@ class ImageAnalysisWrapper(object):
         self._event = event
         logger.debug('Connecting to MySQL')
         self._conn = pymysql.connect(
-            host='localhost', user=CONFIG['MYSQL_USER'],
+            host='db', user=CONFIG['MYSQL_USER'],
             password=CONFIG['MYSQL_PASS'], db=CONFIG['MYSQL_DB'],
             charset='utf8mb4', cursorclass=pymysql.cursors.DictCursor
         )
