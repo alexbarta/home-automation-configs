@@ -113,7 +113,7 @@ class ImageAnalysisWrapper(object):
         logger.debug('POST data: %s', data)
         results = None
         for i in range(0, 6):
-            url = 'http://guarddog:8008/'
+            url = 'http://analysisserver:8008/'
             try:
                 logger.info('POST to %s', url)
                 r = requests.post(url, json=data, timeout=10.0)
