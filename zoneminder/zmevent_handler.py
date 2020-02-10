@@ -139,10 +139,11 @@ def send_to_hass(json_str, event_id):
     while count < 13:
         count += 1
         try:
-            logger.debug('Try POST to: %s', url)
+            logger.info('Try POST to: %s', url)
             r = requests.post(
                 url, data=json_str, timeout=5,
-                headers={'Content-Type': 'application/json'}
+                headers={'Authorization': 'Bearer %s' %(CONFIG['HASS_TOKEN']),
+                         'Content-Type': 'application/json'}
             )
             r.raise_for_status()
             assert 'message' in r.json()

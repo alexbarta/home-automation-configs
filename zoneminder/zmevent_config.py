@@ -41,8 +41,9 @@ CONFIG = {
     'MYSQL_USER': 'zmuser',
     'MYSQL_PASS': 'zmpass',
     'BASE_URL': 'http://redirect.jasonantman.com/zm/',
-    'LOCAL_ZM_URL': 'http://localhost/zm/',
-    'HASS_API_URL': 'http://localhost:8123/api',
+    'LOCAL_ZM_URL': 'http://web/zm/',
+    'HASS_API_URL': 'http://homeassistant.local.hass.io:8123/api',
+    'HASS_TOKEN' : os.environ['HASS_TOKEN']
 }
 
 if node() == 'web':
