@@ -1,6 +1,8 @@
 import os
 import time
+import math
 import logging
+import numpy as np
 from textwrap import dedent
 import requests
 from shapely.geometry.polygon import LinearRing, Polygon
@@ -15,19 +17,73 @@ except ImportError:
         'could not import cv2 - please "pip install opencv-python"'
     )
 try:
-    from pydarknet import Detector, Image
+    from openvino.inference_engine import IENetwork, IEPlugin
 except ImportError:
     raise SystemExit(
-        'could not import pydarknet - please "pip install yolo34py" or '
-        '"pip install yolo34py-gpu"'
+        'could not import openvino libraries :('
     )
 
 
 logger = logging.getLogger(__name__)
 
 #: Path on disk where darknet yolo configs/weights will be stored
-YOLO_CFG_PATH = '/var/cache/zoneminder/yolo'
-YOLO_ALT_CFG_PATH = '/var/cache/zoneminder/yolo-alt'
+YOLO_CFG_PATH = os.environ.get('YOLO_CFG_PATH','/zoneminder/cache/yolo')
+#YOLO_ALT_CFG_PATH = '/var/cache/zoneminder/yolo-alt'
+OPENVINO_DEVICE = os.environ.get('OPENVINO_DEVICE', 'MYRIAD')
+
+CAMERA_DEFAULT_WIDTH = os.environ.get('CAMERA_DEFAULT_WIDTH', 1280)
+
+CAMERA_DEFAULT_HEIGHT = os.environ.get('CAMERA_DEFAULT_HEIGHT', 720)
+
+MODEL_INPUT_SIZE = 416
+
+ANCHORS = [10, 13, 16, 30, 33, 23, 30, 61, 62, 45, 59, 119, 116, 90, 156, 198, 373, 326]
+
+LABELS = ("person", "bicycle", "car", "motorbike", "aeroplane",
+          "bus", "train", "truck", "boat", "traffic light",
+          "fire hydrant", "stop sign", "parking meter", "bench", "bird",
+          "cat", "dog", "horse", "sheep", "cow",
+          "elephant", "bear", "zebra", "giraffe", "backpack",
+          "umbrella", "handbag", "tie", "suitcase", "frisbee",
+          "skis", "snowboard", "sports ball", "kite", "baseball bat",
+          "baseball glove", "skateboard", "surfboard","tennis racket", "bottle",
+          "wine glass", "cup", "fork", "knife", "spoon",
+          "bowl", "banana", "apple", "sandwich", "orange",
+          "broccoli", "carrot", "hot dog", "pizza", "donut",
+          "cake", "chair", "sofa", "pottedplant", "bed",
+          "diningtable", "toilet", "tvmonitor", "laptop", "mouse",
+          "remote", "keyboard", "cell phone", "microwave", "oven",
+          "toaster", "sink", "refrigerator", "book", "clock",
+          "vase", "scissors", "teddy bear", "hair drier", "toothbrush")
+
+yolo_scale_13 = 13
+yolo_scale_26 = 26
+yolo_scale_52 = 52
+
+classes = 80
+coords = 4
+num = 3
+
+def EntryIndex(side, lcoords, lclasses, location, entry):
+    n = int(location / (side * side))
+    loc = location % (side * side)
+    return int(n * side * side * (lcoords + lclasses + 1) + entry * side * side + loc)
+
+class DetectionObject():
+    xmin = 0
+    ymin = 0
+    xmax = 0
+    ymax = 0
+    class_id = 0
+    confidence = 0.0
+
+    def __init__(self, x, y, h, w, class_id, confidence, h_scale, w_scale):
+        self.xmin = int((x - w / 2) * w_scale)
+        self.ymin = int((y - h / 2) * h_scale)
+        self.xmax = int(self.xmin + w * w_scale)
+        self.ymax = int(self.ymin + h * h_scale)
+        self.class_id = class_id
+        self.confidence = confidence
 
 
 class suppress_stdout_stderr(object):
@@ -94,61 +150,50 @@ class YoloAnalyzer(ImageAnalyzer):
         super(YoloAnalyzer, self).__init__(monitor_zones, hostname)
         self._ensure_configs()
         logger.info('Instantiating YOLO3 Detector...')
-        with suppress_stdout_stderr():
-            self._net = Detector(
-                bytes(self._config_path("yolov3.cfg"), encoding="utf-8"),
-                bytes(self._config_path("yolov3.weights"), encoding="utf-8"),
-                0,
-                bytes(self._config_path("coco.data"), encoding="utf-8")
-            )
-        logger.debug('Done instantiating YOLO3 Detector.')
+        #with suppress_stdout_stderr():
+            #self._net = Detector(
+            #    bytes(self._config_path("yolov3.cfg"), encoding="utf-8"),
+            #    bytes(self._config_path("yolov3.weights"), encoding="utf-8"),
+            #    0,
+            #    bytes(self._config_path("coco.data"), encoding="utf-8")
+            #)
+        plugin = IEPlugin(device=OPENVINO_DEVICE)
+        net = IENetwork(model = self._config_path('frozen_darknet_yolov3_model.xml'), 
+            weights = self._config_path('frozen_darknet_yolov3_model.bin'))
+        self._input_blob = next(iter(net.inputs))
+        self._net = plugin.load(network=net, config={"VPU_LOG_LEVEL": "LOG_DEBUG"})
+
+        logger.info('Done instantiating YOLO3 Detector.')
 
     def _ensure_configs(self):
         """Ensure that yolov3-tiny configs and data are in place."""
         # This uses the yolov3-tiny, because I only have a 1GB GPU
         if not os.path.exists(YOLO_CFG_PATH):
-            logger.warning('Creating directory: %s', YOLO_CFG_PATH)
-            os.mkdir(YOLO_CFG_PATH)
-        configs = {
-            'yolov3.cfg': 'https://raw.githubusercontent.com/pjreddie/darknet/'
-                          'master/cfg/yolov3-tiny.cfg',
-            'coco.names': 'https://raw.githubusercontent.com/pjreddie/darknet/'
-                          'master/data/coco.names',
-            'yolov3.weights': 'https://pjreddie.com/media/files/'
-                              'yolov3-tiny.weights'
-        }
-        for fname, url in configs.items():
-            path = self._config_path(fname)
-            if os.path.exists(path):
-                continue
-            logger.warning('%s does not exist; downloading', path)
-            logger.info('Download %s to %s', url, path)
-            r = requests.get(url)
-            logger.info('Writing %d bytes to %s', len(r.content), path)
-            with open(path, 'wb') as fh:
-                fh.write(r.content)
-            logger.debug('Wrote %s', path)
-        # coco.data is special because we change it
-        path = self._config_path('coco.data')
-        if not os.path.exists(path):
-            content = dedent("""
-            classes= 80
-            train  = /home/pjreddie/data/coco/trainvalno5k.txt
-            valid = %s
-            names = %s
-            backup = /home/pjreddie/backup/
-            eval=coco
-            """)
-            logger.warning('%s does not exist; writing', path)
-            with open(path, 'w') as fh:
-                fh.write(content % (
-                    self._config_path('coco_val_5k.list'),
-                    self._config_path('coco.names')
-                ))
-            logger.debug('Wrote %s', path)
+            raise SystemExit('I could not find YOLO_CFG_PATH: %s' % YOLO_CFG_PATH)
+        
+        configs = ['frozen_darknet_yolov3_model.xml', 'frozen_darknet_yolov3_model.bin']
+      
+        for file in configs:
+            path = self._config_path(file)
+            if not os.path.exists(path):
+                raise SystemExit("Could not find file: ", path)
 
     def _config_path(self, f):
         return os.path.join(YOLO_CFG_PATH, f)
+
+    def _prepare_image(self, image):
+        # image resize
+        logger.info("Default width : %s Default height : %s", CAMERA_DEFAULT_WIDTH ,CAMERA_DEFAULT_HEIGHT)
+        resized_image = cv2.resize(image, (MODEL_INPUT_SIZE, MODEL_INPUT_SIZE), interpolation = cv2.INTER_CUBIC)
+        canvas = np.full((MODEL_INPUT_SIZE, MODEL_INPUT_SIZE, 3), 128)
+        #canvas_model_minus_height = ( MODEL_INPUT_SIZE - MODEL_INPUT_SIZE )
+        #canvas_model_minus_width = ( MODEL_INPUT_SIZE - MODEL_INPUT_SIZE )
+        #canvas[canvas_model_minus_height // 2 : canvas_model_minus_height // 2 + CAMERA_DEFAULT_HEIGHT, 
+        #    canvas_model_minus_width // 2 : canvas_model_minus_width // 2 + CAMERA_DEFAULT_WIDTH,  :] = resized_image
+        canvas[0:MODEL_INPUT_SIZE, 0:MODEL_INPUT_SIZE, :] = resized_image
+        canvas = canvas[np.newaxis, :, :, :]     # Batch size axis add  
+        return canvas.transpose((0, 3, 1, 2))  # NHWC to NCHW
+             
 
     def do_image_yolo(self, event_id, frame_id, fname, detected_fname):
         """
@@ -165,12 +210,25 @@ class YoloAnalyzer(ImageAnalyzer):
         :return: yolo3 detection results
         :rtype: list of DetectedObject instances
         """
+        fname = fname.replace('/var/cache/zoneminder', '/zoneminder/cache')
         logger.info('Analyzing: %s', fname)
         img = cv2.imread(fname)
-        img2 = Image(img)
-        results = self._net.detect(img2, thresh=0.2, hier_thresh=0.3, nms=0.4)
-        logger.debug('Raw Results: %s', results)
+        #img2 = Image(img)
+        prepimg = self._prepare_image(img)
+        results = self._net.infer(inputs={self._input_blob: prepimg})
+        logger.info('Raw Results: %s', results)
+        #results = self._net.detect(img2, thresh=0.2, hier_thresh=0.3, nms=0.4)
+
+        objects = []
+
+        for output in results.values():
+            objects = self.parseYOLOV3Output(output, MODEL_INPUT_SIZE, MODEL_INPUT_SIZE, 
+                CAMERA_DEFAULT_HEIGHT, CAMERA_DEFAULT_WIDTH, 0.4, objects)
+        logger.info("Found objects: %s", objects)
+
         retval = {'detections': [], 'ignored_detections': []}
+        return retval
+
         for cat, score, bounds in results:
             if not isinstance(cat, str):
                 cat = cat.decode()
@@ -252,6 +310,61 @@ class YoloAnalyzer(ImageAnalyzer):
             res['ignored_detections'],
             _end - _start
         )
+
+    def parseYOLOV3Output(self, blob, resized_im_h, resized_im_w, original_im_h, original_im_w, threshold, objects):
+    
+        out_blob_h = blob.shape[2]
+        out_blob_w = blob.shape[3]
+    
+        side = out_blob_h
+        anchor_offset = 0
+    
+        if len(ANCHORS) == 18:   ## YoloV3
+            if side == yolo_scale_13:
+                anchor_offset = 2 * 6
+            elif side == yolo_scale_26:
+                anchor_offset = 2 * 3
+            elif side == yolo_scale_52:
+                anchor_offset = 2 * 0
+    
+        elif len(ANCHORS) == 12: ## tiny-YoloV3
+            if side == yolo_scale_13:
+                anchor_offset = 2 * 3
+            elif side == yolo_scale_26:
+                anchor_offset = 2 * 0
+    
+        else:                    ## ???
+            if side == yolo_scale_13:
+                anchor_offset = 2 * 6
+            elif side == yolo_scale_26:
+                anchor_offset = 2 * 3
+            elif side == yolo_scale_52:
+                anchor_offset = 2 * 0
+    
+        side_square = side * side
+        output_blob = blob.flatten()
+    
+        for i in range(side_square):
+            row = int(i / side)
+            col = int(i % side)
+            for n in range(num):
+                obj_index = EntryIndex(side, coords, classes, n * side * side + i, coords)
+                box_index = EntryIndex(side, coords, classes, n * side * side + i, 0)
+                scale = output_blob[obj_index]
+                if (scale < threshold):
+                    continue
+                x = (col + output_blob[box_index + 0 * side_square]) / side * resized_im_w
+                y = (row + output_blob[box_index + 1 * side_square]) / side * resized_im_h
+                height = math.exp(output_blob[box_index + 3 * side_square]) * ANCHORS[anchor_offset + 2 * n + 1]
+                width = math.exp(output_blob[box_index + 2 * side_square]) * ANCHORS[anchor_offset + 2 * n]
+                for j in range(classes):
+                    class_index = EntryIndex(side, coords, classes, n * side_square + i, coords + 1 + j)
+                    prob = scale * output_blob[class_index]
+                    if prob < threshold:
+                        continue
+                    obj = DetectionObject(x, y, height, width, j, prob, (original_im_h / resized_im_h), (original_im_w / resized_im_w))
+                    objects.append(obj)
+        return objects
 
 
 class AlternateYoloAnalyzer(YoloAnalyzer):
