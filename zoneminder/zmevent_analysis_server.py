@@ -21,11 +21,10 @@ except ImportError:
         'could not import cv2 - please "pip install opencv-python"'
     )
 try:
-    from pydarknet import Detector, Image
+    from openvino.inference_engine import IENetwork, IEPlugin
 except ImportError:
     raise SystemExit(
-        'could not import pydarknet - please "pip install yolo34py" or '
-        '"pip install yolo34py-gpu"'
+        'could not import openvino libraries :('
     )
 
 FORMAT = '%(asctime)s %(levelname)s:%(name)s:%(message)s'
@@ -34,8 +33,51 @@ logger = logging.getLogger()
 
 ANALYZERS = [YoloAnalyzer]
 
+YOLO_CFG_PATH = os.environ.get('YOLO_CFG_PATH','/zoneminder/cache/yolo')
+
+OPENVINO_DEVICE = os.environ.get('OPENVINO_DEVICE', 'MYRIAD')
+
+class OpenvinoYoloModel:
+
+    def __init__(self):
+        print('Before calling socket.listen()')
+        self._ensure_configs()
+
+        logger.info('Instantiating YOLO3 Detector...')
+
+        plugin = IEPlugin(device=OPENVINO_DEVICE)
+        net = IENetwork(model = self._config_path('frozen_darknet_yolov3_model.xml'), 
+            weights = self._config_path('frozen_darknet_yolov3_model.bin'))
+        self._input_blob = next(iter(net.inputs))
+        #self._net = plugin.load(network=net, config={"VPU_LOG_LEVEL": "LOG_DEBUG"})
+        self._net = plugin.load(network=net)#config={"VPU_LOG_LEVEL": "LOG_DEBUG"})
+
+        logger.info('Done instantiating YOLO3 Detector.')
+
+    def _ensure_configs(self):
+        """Ensure that yolov3-tiny configs and data are in place."""
+        # This uses the yolov3-tiny, because I only have a 1GB GPU
+        if not os.path.exists(YOLO_CFG_PATH):
+            raise SystemExit('I could not find YOLO_CFG_PATH: %s' % YOLO_CFG_PATH)
+        
+        configs = ['frozen_darknet_yolov3_model.xml', 'frozen_darknet_yolov3_model.bin']
+      
+        for file in configs:
+            path = self._config_path(file)
+            if not os.path.exists(path):
+                raise SystemExit("Could not find file: ", path)
+
+    def _config_path(self, f):
+        return os.path.join(YOLO_CFG_PATH, f)
+
+    def _get_params(self):
+        return (self._input_blob, self._net)   
 
 class ZMEventAnalysisServer(BaseHTTPRequestHandler):
+
+    def __init__(self, net_params, *args):
+        self.net_params = net_params
+        BaseHTTPRequestHandler.__init__(self, *args)
 
     def _set_headers(self):
         self.send_response(200)
@@ -105,7 +147,8 @@ class ZMEventAnalysisServer(BaseHTTPRequestHandler):
                     x: MonitorZone(**msg['monitor_zones'][x])
                     for x in msg['monitor_zones'].keys()
                 },
-                msg['hostname']
+                msg['hostname'],
+                self.net_params
             )
             for frameid, framepath in msg['frames'].items():
                 res = cls.analyze(
@@ -122,8 +165,16 @@ class ZMEventAnalysisServer(BaseHTTPRequestHandler):
 
 
 def run():
+    
+    net_model = OpenvinoYoloModel()
+
+    def handler(*args):
+        ZMEventAnalysisServer(net_model._get_params(), *args)
+
     server_address = ('0.0.0.0', 8008)
-    httpd = HTTPServer(server_address, ZMEventAnalysisServer)
+    #httpd = HTTPServer(server_address, ZMEventAnalysisServer)
+
+    httpd = HTTPServer(server_address, handler)
     print('Starting ZMEventAnalysisServer on port 8008...')
     httpd.serve_forever()
 

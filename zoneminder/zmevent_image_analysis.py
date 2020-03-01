@@ -129,7 +129,7 @@ class ImageAnalyzer(object):
     Base class for specific object detection algorithms/packages.
     """
 
-    def __init__(self, monitor_zones, hostname):
+    def __init__(self, monitor_zones, hostname, net_params):
         """
         Initialize an image analyzer.
 
@@ -139,6 +139,7 @@ class ImageAnalyzer(object):
         """
         self._monitor_zones = monitor_zones
         self._hostname = hostname
+        self._net_params = net_params
 
     def analyze(self, event_id, frame_id, frame_path):
         """
@@ -150,10 +151,10 @@ class ImageAnalyzer(object):
 class YoloAnalyzer(ImageAnalyzer):
     """Object detection using yolo34py and yolov3-tiny"""
 
-    def __init__(self, monitor_zones, hostname):
-        super(YoloAnalyzer, self).__init__(monitor_zones, hostname)
-        self._ensure_configs()
-        logger.info('Instantiating YOLO3 Detector...')
+    def __init__(self, monitor_zones, hostname, net_params):
+        super(YoloAnalyzer, self).__init__(monitor_zones, hostname, net_params)
+        #self._ensure_configs()
+        #logger.info('Instantiating YOLO3 Detector...')
         #with suppress_stdout_stderr():
             #self._net = Detector(
             #    bytes(self._config_path("yolov3.cfg"), encoding="utf-8"),
@@ -161,12 +162,13 @@ class YoloAnalyzer(ImageAnalyzer):
             #    0,
             #    bytes(self._config_path("coco.data"), encoding="utf-8")
             #)
-        plugin = IEPlugin(device=OPENVINO_DEVICE)
-        net = IENetwork(model = self._config_path('frozen_darknet_yolov3_model.xml'), 
-            weights = self._config_path('frozen_darknet_yolov3_model.bin'))
-        self._input_blob = next(iter(net.inputs))
+        #plugin = IEPlugin(device=OPENVINO_DEVICE)
+        #net = IENetwork(model = self._config_path('frozen_darknet_yolov3_model.xml'), 
+        #    weights = self._config_path('frozen_darknet_yolov3_model.bin'))
+        #self._input_blob = next(iter(net.inputs))
+        self._input_blob = self._net_params[0]
         #self._net = plugin.load(network=net, config={"VPU_LOG_LEVEL": "LOG_DEBUG"})
-        self._net = plugin.load(network=net)#, config={"VPU_LOG_LEVEL": "LOG_DEBUG"})
+        self._net = self._net_params[1] #, config={"VPU_LOG_LEVEL": "LOG_DEBUG"})
 
         logger.info('Done instantiating YOLO3 Detector.')
 
