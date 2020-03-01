@@ -85,6 +85,10 @@ class DetectionObject():
         self.class_id = class_id
         self.confidence = confidence
 
+    def _results(self):
+        return (LABELS[self.class_id], self.confidence.astype(float), 
+            (float(self.xmax), float(self.ymax), float(self.xmin), float(self.ymin)))
+
 
 class suppress_stdout_stderr(object):
     """
@@ -161,7 +165,8 @@ class YoloAnalyzer(ImageAnalyzer):
         net = IENetwork(model = self._config_path('frozen_darknet_yolov3_model.xml'), 
             weights = self._config_path('frozen_darknet_yolov3_model.bin'))
         self._input_blob = next(iter(net.inputs))
-        self._net = plugin.load(network=net, config={"VPU_LOG_LEVEL": "LOG_DEBUG"})
+        #self._net = plugin.load(network=net, config={"VPU_LOG_LEVEL": "LOG_DEBUG"})
+        self._net = plugin.load(network=net)#, config={"VPU_LOG_LEVEL": "LOG_DEBUG"})
 
         logger.info('Done instantiating YOLO3 Detector.')
 
@@ -216,7 +221,7 @@ class YoloAnalyzer(ImageAnalyzer):
         #img2 = Image(img)
         prepimg = self._prepare_image(img)
         results = self._net.infer(inputs={self._input_blob: prepimg})
-        logger.info('Raw Results: %s', results)
+        #logger.info('Raw Results: %s', results)
         #results = self._net.detect(img2, thresh=0.2, hier_thresh=0.3, nms=0.4)
 
         objects = []
@@ -227,14 +232,13 @@ class YoloAnalyzer(ImageAnalyzer):
         logger.info("Found objects: %s", objects)
 
         retval = {'detections': [], 'ignored_detections': []}
-        return retval
-
-        for cat, score, bounds in results:
+        
+        for cat, score, bounds in objects:
             if not isinstance(cat, str):
                 cat = cat.decode()
             x, y, w, h = bounds
             zones = self._zones_for_object(x, y, w, h)
-            logger.debug('Checking IgnoredObject filters for detections...')
+            logger.info('Checking IgnoredObject filters for detections...')
             matched_filters = [
                 foo.name for foo in IGNORED_OBJECTS.get(self._hostname, [])
                 if foo.should_ignore(cat, x, y, w, h, zones, score)
@@ -267,6 +271,7 @@ class YoloAnalyzer(ImageAnalyzer):
                 (int(x), int(y)),
                 cv2.FONT_HERSHEY_COMPLEX, 1, text_color
             )
+        detected_fname = detected_fname.replace('/var/cache/zoneminder', '/zoneminder/cache')
         logger.info('Writing: %s', detected_fname)
         cv2.imwrite(detected_fname, img)
         logger.info('Done with: %s', fname)
@@ -363,7 +368,7 @@ class YoloAnalyzer(ImageAnalyzer):
                     if prob < threshold:
                         continue
                     obj = DetectionObject(x, y, height, width, j, prob, (original_im_h / resized_im_h), (original_im_w / resized_im_w))
-                    objects.append(obj)
+                    objects.append(obj._results())
         return objects
 
 
