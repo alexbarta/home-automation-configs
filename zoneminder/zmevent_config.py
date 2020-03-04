@@ -22,7 +22,7 @@ MIN_LOG_LEVEL = 1
 ANALYSIS_TABLE_NAME = 'zmevent_handler_ImageAnalysis'
 
 #: Path on disk where ZoneMinder events are stored
-EVENTS_PATH = '/zoneminder/events'
+EVENTS_PATH = '/var/cache/zoneminder/events'
 
 #: Name of the event to send homeassistant
 HASS_EVENT_NAME = 'ZM_ALARM'
@@ -48,7 +48,7 @@ CONFIG = {
 
 if node() == 'web':
     CONFIG['BASE_URL'] = 'http://redirect.jasonantman.com/telescreen/'
-    EVENTS_PATH = '/zoneminder/events/'
+    EVENTS_PATH = '/var/cache/zoneminder/events/'
     ZM_HOSTNAME = 'web'
 
 
