@@ -86,8 +86,10 @@ class DetectionObject():
         self.confidence = confidence
 
     def _results(self):
+        #return (LABELS[self.class_id], self.confidence.astype(float), 
+        #    (float(self.xmax), float(self.ymax), float(self.xmin), float(self.ymin)))
         return (LABELS[self.class_id], self.confidence.astype(float), 
-            (float(self.xmax), float(self.ymax), float(self.xmin), float(self.ymin)))
+            (self.xmin, self.ymin, self.xmax, self.ymax))
 
 
 class suppress_stdout_stderr(object):
@@ -239,6 +241,7 @@ class YoloAnalyzer(ImageAnalyzer):
             if not isinstance(cat, str):
                 cat = cat.decode()
             x, y, w, h = bounds
+            logger.info('DEBUG: cat,x,y,w,h,score %s,%d,%d,%d,%d,%.2f',cat,x,y,w,h,score)
             zones = self._zones_for_object(x, y, w, h)
             logger.info('Checking IgnoredObject filters for detections...')
             matched_filters = [
@@ -265,8 +268,10 @@ class YoloAnalyzer(ImageAnalyzer):
                     cat, zones, score, x, y, w, h
                 ))
             cv2.rectangle(
-                img, (int(x - w / 2), int(y - h / 2)),
-                (int(x + w / 2), int(y + h / 2)), rect_color, thickness=2
+                #img, (int(x - w / 2), int(y - h / 2)),
+                #(int(x + w / 2), int(y + h / 2)), rect_color, thickness=2
+                #img, (x,obj.ymin),(obj.xmax,obj.ymax),box_color,box_thickness
+                img, (int(x), int(y), int(w), int(h)), rect_color, thickness=2
             )
             cv2.putText(
                 img, '%s (%.2f)' % (cat, score),
@@ -364,11 +369,14 @@ class YoloAnalyzer(ImageAnalyzer):
                 y = (row + output_blob[box_index + 1 * side_square]) / side * resized_im_h
                 height = math.exp(output_blob[box_index + 3 * side_square]) * ANCHORS[anchor_offset + 2 * n + 1]
                 width = math.exp(output_blob[box_index + 2 * side_square]) * ANCHORS[anchor_offset + 2 * n]
+
                 for j in range(classes):
                     class_index = EntryIndex(side, coords, classes, n * side_square + i, coords + 1 + j)
                     prob = scale * output_blob[class_index]
                     if prob < threshold:
                         continue
+                    #logger.debug('Side,coords,classes,n,side_square %d,%d,%d,%d,%d',side,coords,classes,n,side_square)
+                    logger.debug("Resized image coords: x: %d, y: %d, w: %d, h: %d", x, y, width, height)
                     obj = DetectionObject(x, y, height, width, j, prob, (original_im_h / resized_im_h), (original_im_w / resized_im_w))
                     objects.append(obj._results())
         return objects
