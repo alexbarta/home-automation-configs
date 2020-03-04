@@ -46,10 +46,10 @@ CONFIG = {
     'HASS_TOKEN' : os.environ['HASS_TOKEN']
 }
 
-if node() == 'web':
+if node() == 'event_notification':
     CONFIG['BASE_URL'] = 'http://redirect.jasonantman.com/telescreen/'
     EVENTS_PATH = '/var/cache/zoneminder/events/'
-    ZM_HOSTNAME = 'web'
+    ZM_HOSTNAME = 'event_notification'
 
 
 def populate_secrets():
