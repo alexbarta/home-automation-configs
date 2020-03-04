@@ -35,6 +35,8 @@ CAMERA_DEFAULT_WIDTH = os.environ.get('CAMERA_DEFAULT_WIDTH', 1280)
 
 CAMERA_DEFAULT_HEIGHT = os.environ.get('CAMERA_DEFAULT_HEIGHT', 720)
 
+ZM_DATA_PATH_PREFIX = os.environ.get('ZM_DATA_PATH_PREFIX', '/zoneminder/cache')
+
 MODEL_INPUT_SIZE = 416
 
 ANCHORS = [10, 13, 16, 30, 33, 23, 30, 61, 62, 45, 59, 119, 116, 90, 156, 198, 373, 326]
@@ -219,7 +221,7 @@ class YoloAnalyzer(ImageAnalyzer):
         :return: yolo3 detection results
         :rtype: list of DetectedObject instances
         """
-        fname = fname.replace('/var/cache/zoneminder', '/zoneminder/cache')
+        fname = fname.replace('/var/cache/zoneminder', ZM_DATA_PATH_PREFIX)
         logger.info('Analyzing: %s', fname)
         img = cv2.imread(fname)
         #img2 = Image(img)
@@ -278,7 +280,7 @@ class YoloAnalyzer(ImageAnalyzer):
                 (int(x), int(y)),
                 cv2.FONT_HERSHEY_COMPLEX, 1, text_color
             )
-        detected_fname = detected_fname.replace('/var/cache/zoneminder', '/zoneminder/cache')
+        detected_fname = detected_fname.replace('/var/cache/zoneminder', ZM_DATA_PATH_PREFIX)
         logger.info('Writing: %s', detected_fname)
         cv2.imwrite(detected_fname, img)
         logger.info('Done with: %s', fname)
