@@ -314,12 +314,7 @@ class ZMEvent(object):
         for k, v in res.items():
             if hasattr(self, k):
                 setattr(self, k, v)
-        if ZM_HOSTNAME == 'event_notification':
-            self.path = os.path.join(
-                EVENTS_PATH, '%s' % self.MonitorId,
-                self.StartTime.strftime('%y/%m/%d/%H/%M/%S')
-            )
-        elif ZM_HOSTNAME == 'event_notification':
+        if ZM_HOSTNAME == 'web':
             self.path = os.path.join(
                 EVENTS_PATH, '%s' % self.MonitorId,
                 self.StartTime.strftime('%Y-%m-%d'),
