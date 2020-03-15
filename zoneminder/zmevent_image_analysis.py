@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 #: Path on disk where darknet yolo configs/weights will be stored
 YOLO_CFG_PATH = os.environ.get('YOLO_CFG_PATH','/zoneminder/cache/yolo')
 #YOLO_ALT_CFG_PATH = '/var/cache/zoneminder/yolo-alt'
-OPENVINO_DEVICE = os.environ.get('OPENVINO_DEVICE', 'MYRIAD')
+#OPENVINO_DEVICE = os.environ.get('OPENVINO_DEVICE', 'MYRIAD')
 
 CAMERA_DEFAULT_WIDTH = os.environ.get('CAMERA_DEFAULT_WIDTH', 1280)
 

@@ -13,15 +13,16 @@ from shapely.geometry.polygon import LinearRing, Polygon
 from platform import node
 
 from zmevent_config import (
-    EVENTS_PATH, CONFIG, DateSafeJsonEncoder, ZM_HOSTNAME
+    EVENTS_PATH, CONFIG, DateSafeJsonEncoder, ZM_HOSTNAME, FRAME_SELECTION_CONFIG
 )
 
 logger = logging.getLogger(__name__)
 
 #: The maximum number of first/best frame pairs to analyze from contiguous
 #: alarm frame sets, in each Event.
-MAX_ANALYSIS_COUNT = 5
-
+#MAX_ANALYSIS_COUNT = 5
+MAX_ANALYSIS_COUNT = FRAME_SELECTION_CONFIG['MAX_RELEVANT_RUNS']
+BEST_FRAMES_COUNT = FRAME_SELECTION_CONFIG['BEST_FRAMES_COUNT']
 
 class Monitor(object):
     """Class to represent a Monitor from ZoneMinder's database."""
@@ -372,7 +373,20 @@ class ZMEvent(object):
         self.FramesForAnalysis.update(
             self._get_contiguous_frames_for_analysis()
         )
+        self.FramesForAnalysis.update(
+            self._get_top_frames_by_fScore()
+        )
         logger.info('Frames to analyze: %s', self.FramesForAnalysis)
+
+	def _get_top_frames_by_fScore(self):
+        """
+        Return a dict containing the best frames from the event, sorted by frame score.
+        Note: not aware of the presence of contiguous runs of alarm frames.
+        """
+        topFrames=sorted(
+            self.AllFrames, key=lambda x: x.Score
+        )[:BEST_FRAMES_PER_EVENT]
+        return topFrames
 
     def _get_contiguous_frames_for_analysis(self):
         """

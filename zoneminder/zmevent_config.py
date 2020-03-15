@@ -40,17 +40,23 @@ CONFIG = {
     'MYSQL_DB': 'zm' ,
     'MYSQL_USER': 'zmuser',
     'MYSQL_PASS': 'zmpass',
-    'BASE_URL': 'http://redirect.jasonantman.com/zm/',
+#    'BASE_URL': 'http://redirect.jasonantman.com/zm/',
     'LOCAL_ZM_URL': 'http://web/zm/',
     'HASS_API_URL': 'http://homeassistant.local.hass.io:8123/api',
     'HASS_TOKEN' : os.environ['HASS_TOKEN']
 }
 
 #if node() == 'event_notification':
-CONFIG['BASE_URL'] = 'http://redirect.jasonantman.com/telescreen/'
-EVENTS_PATH = '/var/cache/zoneminder/events/'
+#CONFIG['BASE_URL'] = 'http://redirect.jasonantman.com/telescreen/'
+#EVENTS_PATH = '/var/cache/zoneminder/events/'
 #ZM_HOSTNAME = 'web'
 
+#The maximum number of first/best frame pairs from contiguous alarm frame sets, in each Event
+#Best frames to analyze in each Event (sorted by frame score)
+FRAME_SELECTION_CONFIG = {
+    'MAX_RELEVANT_RUNS' = 5,
+    'BEST_FRAMES_PER_EVENT' = 10
+}
 
 def populate_secrets():
     """Populate the ``CONFIG`` global from environment variables."""
