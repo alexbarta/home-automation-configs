@@ -385,7 +385,7 @@ class ZMEvent(object):
         """
         topFrames=sorted(
             self.AllFrames, key=lambda x: x.Score
-        )[:BEST_FRAMES_PER_EVENT]
+        )[:BEST_FRAMES_COUNT]
         return topFrames
 
     def _get_contiguous_frames_for_analysis(self):
