@@ -54,8 +54,8 @@ CONFIG = {
 #The maximum number of first/best frame pairs from contiguous alarm frame sets, in each Event
 #Best frames to analyze in each Event (sorted by frame score)
 FRAME_SELECTION_CONFIG = {
-    'MAX_RELEVANT_RUNS' = 5,
-    'BEST_FRAMES_PER_EVENT' = 10
+    'MAX_RELEVANT_RUNS' = '5',
+    'BEST_FRAMES_COUNT' = '10'
 }
 
 def populate_secrets():
