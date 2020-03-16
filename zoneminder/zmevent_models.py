@@ -378,7 +378,7 @@ class ZMEvent(object):
         )
         logger.info('Frames to analyze: %s', self.FramesForAnalysis)
 
-	def _get_top_frames_by_fScore(self):
+    def _get_top_frames_by_fScore(self):
         """
         Return a dict containing the best frames from the event, sorted by frame score.
         Note: not aware of the presence of contiguous runs of alarm frames.
