@@ -383,9 +383,14 @@ class ZMEvent(object):
         Return a dict containing the best frames from the event, sorted by frame score.
         Note: not aware of the presence of contiguous runs of alarm frames.
         """
-        topFrames=sorted(
+        # sort AllFrames by frame score, descending, and take only the top N
+        topFrames = sorted(
             self.AllFrames, key=lambda x: x.Score
         )[:BEST_FRAMES_COUNT]
+        logger.info(
+            'Found the %d top frames in Event, sorted by highest score: %s',
+            len(topFrames), BEST_FRAMES_COUNT, topFrames
+        )
         return topFrames
 
     def _get_contiguous_frames_for_analysis(self):
