@@ -238,7 +238,8 @@ class YoloAnalyzer(ImageAnalyzer):
         logger.info("Found objects: %s", objects)
 
         retval = {'detections': [], 'ignored_detections': []}
-        
+        label=''
+
         for cat, score, bounds in objects:
             if not isinstance(cat, str):
                 cat = cat.decode()
@@ -269,6 +270,7 @@ class YoloAnalyzer(ImageAnalyzer):
                 retval['detections'].append(DetectedObject(
                     cat, zones, score, x, y, w, h
                 ))
+                label+='_'+cat
             cv2.rectangle(
                 #img, (int(x - w / 2), int(y - h / 2)),
                 #(int(x + w / 2), int(y + h / 2)), rect_color, thickness=2
@@ -281,6 +283,8 @@ class YoloAnalyzer(ImageAnalyzer):
                 cv2.FONT_HERSHEY_COMPLEX, 1, text_color
             )
         detected_fname = detected_fname.replace('/var/cache/zoneminder', ZM_DATA_PATH_PREFIX)
+        detected_fname = detected_fname.replace('.yolo3.jpg', '.yolo3'+label+'.jpg')
+
         logger.info('Writing: %s', detected_fname)
         cv2.imwrite(detected_fname, img)
         logger.info('Done with: %s', fname)
@@ -314,11 +318,6 @@ class YoloAnalyzer(ImageAnalyzer):
         output_path = frame_path.replace('.jpg', '.yolo3.jpg')
         res = self.do_image_yolo(event_id, frame_id, frame_path, output_path)
         _end = time.time()
-
-        label=''
-        for obj in res['detections']:
-            label+='_'+obj._label 
-        output_path = frame_path.replace('.yolo3.jpg', '.yolo3'+label+'.jpg')
 
         return ObjectDetectionResult(
             self.__class__.__name__,
