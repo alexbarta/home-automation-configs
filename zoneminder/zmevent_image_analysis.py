@@ -314,6 +314,11 @@ class YoloAnalyzer(ImageAnalyzer):
         output_path = frame_path.replace('.jpg', '.yolo3.jpg')
         res = self.do_image_yolo(event_id, frame_id, frame_path, output_path)
         _end = time.time()
+
+        for obj in res['detections']: 
+            if obj._label=='person':
+                output_path = frame_path.replace('.yolo3.jpg', '.yolo3_'+obj._label+'.jpg')
+
         return ObjectDetectionResult(
             self.__class__.__name__,
             event_id,
