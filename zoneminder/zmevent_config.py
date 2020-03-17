@@ -12,6 +12,7 @@ from platform import node
 
 #: If logging to a file, the file path to log to.
 LOG_PATH = '/var/cache/zoneminder/temp/zmevent_handler.log'
+LOG_PATH_AS = '/var/cache/zoneminder/temp/zmevent_analysis_server.log'
 
 #: Minimum log level to run with. This can be used to enable debug logging
 #: in the script itself overriding the command-line arguments, i.e. if you're

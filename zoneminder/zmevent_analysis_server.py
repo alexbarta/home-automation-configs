@@ -10,7 +10,7 @@ import os
 # This is running from a git clone, not really installed
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
-from zmevent_config import DateSafeJsonEncoder
+from zmevent_config import DateSafeJsonEncoder, LOG_PATH_AS
 from zmevent_image_analysis import YoloAnalyzer
 from zmevent_models import MonitorZone
 
@@ -28,7 +28,7 @@ except ImportError:
     )
 
 FORMAT = '%(asctime)s %(levelname)s:%(name)s:%(message)s'
-logging.basicConfig(level=logging.INFO, format=FORMAT)
+logging.basicConfig(level=logging.INFO, format=FORMAT, filename=LOG_PATH_AS)
 logger = logging.getLogger()
 
 ANALYZERS = [YoloAnalyzer]
@@ -176,6 +176,7 @@ def run():
 
     httpd = HTTPServer(server_address, handler)
     print('Starting ZMEventAnalysisServer on port 8008...')
+    logger.info('Starting ZMEventAnalysisServer on port 8008...')
     httpd.serve_forever()
 
 
