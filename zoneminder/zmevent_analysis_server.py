@@ -3,7 +3,6 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import cgi
 import logging
-from systemd.journal import JournalHandler
 import json
 import sys
 import os
@@ -31,7 +30,6 @@ except ImportError:
 FORMAT = '%(asctime)s %(levelname)s:%(name)s:%(message)s'
 logging.basicConfig(level=logging.INFO, format=FORMAT, filename=LOG_PATH_AS)
 logger = logging.getLogger()
-logger.addHandler(JournalHandler())
 
 ANALYZERS = [YoloAnalyzer]
 
