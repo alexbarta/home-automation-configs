@@ -37,7 +37,7 @@ CAMERA_DEFAULT_HEIGHT = os.environ.get('CAMERA_DEFAULT_HEIGHT', 720)
 
 ZM_DATA_PATH_PREFIX = os.environ.get('ZM_DATA_PATH_PREFIX', '/zoneminder/cache')
 
-MODEL_INPUT_SIZE = 416
+MODEL_INPUT_SIZE = 608        #320, 416, 608, 960
 
 ANCHORS = [10, 13, 16, 30, 33, 23, 30, 61, 62, 45, 59, 119, 116, 90, 156, 198, 373, 326]
 
@@ -336,6 +336,7 @@ class YoloAnalyzer(ImageAnalyzer):
         out_blob_w = blob.shape[3]
     
         side = out_blob_h
+        logger.info('YOLO scale = %d     YOLO reso = %d', side, MODEL_INPUT_SIZE)
         anchor_offset = 0
     
         if len(ANCHORS) == 18:   ## YoloV3
