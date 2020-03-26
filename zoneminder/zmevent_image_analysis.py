@@ -3,6 +3,7 @@ import time
 import math
 import logging
 import numpy as np
+import configparser, ast
 from textwrap import dedent
 import requests
 from shapely.geometry.polygon import LinearRing, Polygon
@@ -23,6 +24,8 @@ except ImportError:
         'could not import openvino libraries :('
     )
 
+configAS = configparser.ConfigParser()
+configAS.read("config-analysis-server.ini")
 
 logger = logging.getLogger(__name__)
 
@@ -37,34 +40,20 @@ CAMERA_DEFAULT_HEIGHT = os.environ.get('CAMERA_DEFAULT_HEIGHT', 720)
 
 ZM_DATA_PATH_PREFIX = os.environ.get('ZM_DATA_PATH_PREFIX', '/zoneminder/cache')
 
-MODEL_INPUT_SIZE = 608        #320, 416, 608, 960
+MODEL_INPUT_SIZE = configAS.getint("yolo", "MODEL_INPUT_SIZE")
 
-ANCHORS = [10, 13, 16, 30, 33, 23, 30, 61, 62, 45, 59, 119, 116, 90, 156, 198, 373, 326]
+ANCHORS = ast.literal_eval(configAS.get("yolo", "ANCHORS"))
 
-LABELS = ("person", "bicycle", "car", "motorbike", "aeroplane",
-          "bus", "train", "truck", "boat", "traffic light",
-          "fire hydrant", "stop sign", "parking meter", "bench", "bird",
-          "cat", "dog", "horse", "sheep", "cow",
-          "elephant", "bear", "zebra", "giraffe", "backpack",
-          "umbrella", "handbag", "tie", "suitcase", "frisbee",
-          "skis", "snowboard", "sports ball", "kite", "baseball bat",
-          "baseball glove", "skateboard", "surfboard","tennis racket", "bottle",
-          "wine glass", "cup", "fork", "knife", "spoon",
-          "bowl", "banana", "apple", "sandwich", "orange",
-          "broccoli", "carrot", "hot dog", "pizza", "donut",
-          "cake", "chair", "sofa", "pottedplant", "bed",
-          "diningtable", "toilet", "tvmonitor", "laptop", "mouse",
-          "remote", "keyboard", "cell phone", "microwave", "oven",
-          "toaster", "sink", "refrigerator", "book", "clock",
-          "vase", "scissors", "teddy bear", "hair drier", "toothbrush")
+LABELS = tuple(ast.literal_eval(configAS.get("yolo", "LABELS")))
 
-yolo_scale_13 = 13
-yolo_scale_26 = 26
-yolo_scale_52 = 52
+yolo_scale_13 = configAS.getint("yolo", "yolo_scale_13")
+yolo_scale_26 = configAS.getint("yolo", "yolo_scale_26")
+yolo_scale_52 = configAS.getint("yolo", "yolo_scale_52")
 
-classes = 80
-coords = 4
-num = 3
+#classes = configAS.getint("yolo", "classes")
+classes = len(LABELS)
+coords = configAS.getint("yolo", "coords")
+num = configAS.getint("yolo", "num")
 
 def EntryIndex(side, lcoords, lclasses, location, entry):
     n = int(location / (side * side))
@@ -158,7 +147,7 @@ class YoloAnalyzer(ImageAnalyzer):
     def __init__(self, monitor_zones, hostname, net_params):
         super(YoloAnalyzer, self).__init__(monitor_zones, hostname, net_params)
         #self._ensure_configs()
-        #logger.info('Instantiating YOLO3 Detector...')
+        logger.info('[YoloAnalyzer] Instantiating YOLO3 Detector...')
         #with suppress_stdout_stderr():
             #self._net = Detector(
             #    bytes(self._config_path("yolov3.cfg"), encoding="utf-8"),
@@ -227,7 +216,7 @@ class YoloAnalyzer(ImageAnalyzer):
         #img2 = Image(img)
         prepimg = self._prepare_image(img)
         results = self._net.infer(inputs={self._input_blob: prepimg})
-        #logger.info('Raw Results: %s', results)
+        logger.debug('Raw Results: %s', results)
         #results = self._net.detect(img2, thresh=0.2, hier_thresh=0.3, nms=0.4)
 
         objects = []
@@ -336,7 +325,7 @@ class YoloAnalyzer(ImageAnalyzer):
         out_blob_w = blob.shape[3]
     
         side = out_blob_h
-        logger.info('YOLO scale = %d     YOLO reso = %d', side, MODEL_INPUT_SIZE)
+#        logger.debug('YOLO scale = %d     YOLO reso = %d     ANCHORS: %s', side, MODEL_INPUT_SIZE, ANCHORS)
         anchor_offset = 0
     
         if len(ANCHORS) == 18:   ## YoloV3
@@ -383,7 +372,7 @@ class YoloAnalyzer(ImageAnalyzer):
                     prob = scale * output_blob[class_index]
                     if prob < threshold:
                         continue
-                    #logger.debug('Side,coords,classes,n,side_square %d,%d,%d,%d,%d',side,coords,classes,n,side_square)
+                    logger.debug('Side,coords,classes,n,side_square %d,%d,%d,%d,%d',side,coords,classes,n,side_square)
                     logger.debug("Resized image coords: x: %d, y: %d, w: %d, h: %d", x, y, width, height)
                     obj = DetectionObject(x, y, height, width, j, prob, (original_im_h / resized_im_h), (original_im_w / resized_im_w))
                     objects.append(obj._results())

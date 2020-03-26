@@ -45,14 +45,14 @@ class OpenvinoYoloModel:
         print('Before calling socket.listen()')
         self._ensure_configs()
 
-        logger.info('Instantiating YOLO3 Detector...')
+        logger.info('[OpenvinoYoloModel] Instantiating YOLO3 Detector...')
 
         plugin = IEPlugin(device=OPENVINO_DEVICE)
         net = IENetwork(model = self._config_path('frozen_darknet_yolov3_model.xml'), 
             weights = self._config_path('frozen_darknet_yolov3_model.bin'))
         self._input_blob = next(iter(net.inputs))
         #self._net = plugin.load(network=net, config={"VPU_LOG_LEVEL": "LOG_DEBUG"})
-        self._net = plugin.load(network=net)#config={"VPU_LOG_LEVEL": "LOG_DEBUG"})
+        self._net = plugin.load(network=net)
 
         logger.info('Done instantiating YOLO3 Detector.')
 
