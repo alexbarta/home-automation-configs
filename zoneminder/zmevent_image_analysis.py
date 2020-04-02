@@ -25,10 +25,9 @@ except ImportError:
     )
 
 configAS = configparser.ConfigParser()
-configAS.read("config-analysis-server.ini")
+configAS.read("/home-automation-configs/zoneminder/config-analysis-server.ini")
 
 logger = logging.getLogger(__name__)
-logger.info('config-analysis-server.ini: ', configAS.read("config-analysis-server.ini"))
 
 #: Path on disk where darknet yolo configs/weights will be stored
 YOLO_CFG_PATH = os.environ.get('YOLO_CFG_PATH','/zoneminder/cache/yolo')
