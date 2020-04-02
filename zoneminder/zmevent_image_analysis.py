@@ -28,6 +28,7 @@ configAS = configparser.ConfigParser()
 configAS.read("/home-automation-configs/zoneminder/config-analysis-server.ini")
 
 logger = logging.getLogger(__name__)
+logger.info(configAS.read("/home-automation-configs/zoneminder/config-analysis-server.ini"))
 
 #: Path on disk where darknet yolo configs/weights will be stored
 YOLO_CFG_PATH = os.environ.get('YOLO_CFG_PATH','/zoneminder/cache/yolo')
@@ -54,6 +55,10 @@ yolo_scale_52 = configAS.getint("yolo", "yolo_scale_52")
 classes = len(LABELS)
 coords = configAS.getint("yolo", "coords")
 num = configAS.getint("yolo", "num")
+
+logger.info("classes: ", classes)
+logger.info("coords: ", coords)
+logger.info("num: ", num)
 
 def EntryIndex(side, lcoords, lclasses, location, entry):
     n = int(location / (side * side))
