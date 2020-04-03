@@ -2,7 +2,8 @@
 MODEL_INPUT_SIZE = 416
 
 ANCHORS = [10.0, 13.0, 16.0, 30.0, 33.0, 23.0, 30.0, 61.0, 62.0, 45.0, 59.0, 119.0, 116.0, 90.0, 156.0, 198.0, 373.0, 326.0]
-#ANCHORS = [10,14,  23,27,  37,58,  81,82,  135,169,  344,319]     #(tiny?)
+#ANCHORS = [10,14,  23,27,  37,58,  81,82,  135,169,  344,319]     #da yolov3.cfg (tiny?)
+#anchors = [10,13,  16,30,  33,23,  30,61,  62,45,  59,119,  116,90,  156,198,  373,326]
 
 LABELS = ("person", "bicycle", "car", "motorbike", "aeroplane",
           "bus", "train", "truck", "boat", "traffic light",
@@ -28,3 +29,4 @@ yolo_scale_52 = 52
 #classes = 80
 coords = 4
 num = 3
+

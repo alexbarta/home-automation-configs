@@ -2,6 +2,7 @@ import os
 import time
 import math
 import logging
+from systemd.journal import JournalHandler
 import numpy as np
 import configparser, ast
 from textwrap import dedent
@@ -27,8 +28,11 @@ except ImportError:
 configAS = configparser.ConfigParser()
 configAS.read("/home-automation-configs/zoneminder/config-analysis-server.ini")
 
+FORMAT = '%(asctime)s %(levelname)s:%(name)s:%(message)s'
+logging.basicConfig(level=logging.INFO, format=FORMAT, filename=LOG_PATH_AS)
 logger = logging.getLogger(__name__)
-logger.info(configAS.read("/home-automation-configs/zoneminder/config-analysis-server.ini"))
+logger.addHandler(JournalHandler())
+
 
 #: Path on disk where darknet yolo configs/weights will be stored
 YOLO_CFG_PATH = os.environ.get('YOLO_CFG_PATH','/zoneminder/cache/yolo')
@@ -45,7 +49,8 @@ MODEL_INPUT_SIZE = configAS.getint("yolo", "MODEL_INPUT_SIZE")
 
 ANCHORS = ast.literal_eval(configAS.get("yolo", "ANCHORS"))
 
-LABELS = tuple(ast.literal_eval(configAS.get("yolo", "LABELS")))
+#LABELS = tuple(ast.literal_eval(configAS.get("yolo", "LABELS")))
+LABELS = ["person"]
 
 yolo_scale_13 = configAS.getint("yolo", "yolo_scale_13")
 yolo_scale_26 = configAS.getint("yolo", "yolo_scale_26")
@@ -55,10 +60,6 @@ yolo_scale_52 = configAS.getint("yolo", "yolo_scale_52")
 classes = len(LABELS)
 coords = configAS.getint("yolo", "coords")
 num = configAS.getint("yolo", "num")
-
-logger.info("classes: ", classes)
-logger.info("coords: ", coords)
-logger.info("num: ", num)
 
 def EntryIndex(side, lcoords, lclasses, location, entry):
     n = int(location / (side * side))
@@ -153,6 +154,9 @@ class YoloAnalyzer(ImageAnalyzer):
         super(YoloAnalyzer, self).__init__(monitor_zones, hostname, net_params)
         #self._ensure_configs()
         logger.info('[YoloAnalyzer] Instantiating YOLO3 Detector...')
+        logger.info("classes: %s      labels: %s", classes, LABELS)
+        logger.info("coords: %s", coords)
+        logger.info("num: %s", num)
         #with suppress_stdout_stderr():
             #self._net = Detector(
             #    bytes(self._config_path("yolov3.cfg"), encoding="utf-8"),
