@@ -28,8 +28,6 @@ except ImportError:
 configAS = configparser.ConfigParser()
 configAS.read("/home-automation-configs/zoneminder/config-analysis-server.ini")
 
-FORMAT = '%(asctime)s %(levelname)s:%(name)s:%(message)s'
-logging.basicConfig(level=logging.INFO, format=FORMAT, filename=LOG_PATH_AS)
 logger = logging.getLogger(__name__)
 logger.addHandler(JournalHandler())
 
