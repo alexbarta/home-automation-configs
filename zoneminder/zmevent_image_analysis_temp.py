@@ -272,7 +272,6 @@ class YoloAnalyzer(ImageAnalyzer):
                 #img, (int(x - w / 2), int(y - h / 2)),
                 #(int(x + w / 2), int(y + h / 2)), rect_color, thickness=2
                 #img, (x,obj.ymin),(obj.xmax,obj.ymax),box_color,box_thickness
-                #img, (int(x), int(y), int(w), int(h)), rect_color, thickness=2
                 img, (int(x), int(y), int((w-x)*2), int((h-y)*2)), rect_color, thickness=2
             )
             cv2.putText(
