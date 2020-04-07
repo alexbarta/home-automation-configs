@@ -47,8 +47,8 @@ MODEL_INPUT_SIZE = configAS.getint("yolo", "MODEL_INPUT_SIZE")
 
 ANCHORS = ast.literal_eval(configAS.get("yolo", "ANCHORS"))
 
-#LABELS = tuple(ast.literal_eval(configAS.get("yolo", "LABELS")))
-LABELS = ["person","car"]
+LABELS = tuple(ast.literal_eval(configAS.get("yolo", "LABELS")))
+#LABELS = ["person"]
 
 yolo_scale_13 = configAS.getint("yolo", "yolo_scale_13")
 yolo_scale_26 = configAS.getint("yolo", "yolo_scale_26")
@@ -267,13 +267,15 @@ class YoloAnalyzer(ImageAnalyzer):
                     cat, zones, score, x, y, w, h
                 ))
                 label+='_'+cat
-            logger.info("x %s    y %s   w %s   h %s   int((w-x)*2) %s   int((h-y)*2) %s",x,y,w,h,str(int(((w-x)*2))),str(int((h-y)*2)))
+            #logger.info("x %s    y %s   w %s   h %s   int((w-x)*2) %s   int((h-y)*2) %s",x,y,w,h,str(int(((w-x)*2))),str(int((h-y)*2)))
+            logger.info("x %s    y %s   w %s   h %s   int(w-x) %s   int(h-y) %s",x,y,w,h,str(int(w-x)),str(int(h-y)))
             cv2.rectangle(
                 #img, (int(x - w / 2), int(y - h / 2)),
                 #(int(x + w / 2), int(y + h / 2)), rect_color, thickness=2
                 #img, (x,obj.ymin),(obj.xmax,obj.ymax),box_color,box_thickness
                 #img, (int(x), int(y), int(w), int(h)), rect_color, thickness=2
-                img, (int(x), int(y), int((w-x)*2), int((h-y)*2)), rect_color, thickness=2
+                #img, (int(x), int(y), int((w-x)*2), int((h-y)*2)), rect_color, thickness=2
+                img, (int(x), int(y), int(w-x), int(h-y)), rect_color, thickness=2
             )
             cv2.putText(
                 img, '%s (%.2f)' % (cat, score),
