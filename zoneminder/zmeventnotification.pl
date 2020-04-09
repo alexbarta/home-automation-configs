@@ -47,7 +47,7 @@ use strict;
 use bytes;
 
 # Declare options.
-my $verbose                    = 0;
+my $verbose                    = 1;
 my $event_check_interval       = 3; # seconds
 my $monitor_reload_interval    = 300; # seconds
 my $read_alarm_cause           = 0;
