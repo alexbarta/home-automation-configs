@@ -37,10 +37,9 @@ YOLO_CFG_PATH = os.environ.get('YOLO_CFG_PATH','/zoneminder/cache/yolo')
 
 configAS.read(YOLO_CFG_PATH+"/config-analysis-server.ini")
 
-#CAMERA_DEFAULT_WIDTH = os.environ.get('CAMERA_DEFAULT_WIDTH', 1280)
-#CAMERA_DEFAULT_HEIGHT = os.environ.get('CAMERA_DEFAULT_HEIGHT', 720)
-CAMERA_DEFAULT_WIDTH = os.environ.get('CAMERA_DEFAULT_WIDTH', 1920)
-CAMERA_DEFAULT_HEIGHT = os.environ.get('CAMERA_DEFAULT_HEIGHT', 1080)
+CAMERA_DEFAULT_WIDTH = int(os.environ.get('CAMERA_DEFAULT_WIDTH', 1280))
+
+CAMERA_DEFAULT_HEIGHT = int(os.environ.get('CAMERA_DEFAULT_HEIGHT', 720))
 
 ZM_DATA_PATH_PREFIX = os.environ.get('ZM_DATA_PATH_PREFIX', '/zoneminder/cache')
 
