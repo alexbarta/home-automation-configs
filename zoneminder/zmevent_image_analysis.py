@@ -37,9 +37,8 @@ YOLO_CFG_PATH = os.environ.get('YOLO_CFG_PATH','/zoneminder/cache/yolo')
 
 configAS.read(YOLO_CFG_PATH+"/config-analysis-server.ini")
 
-CAMERA_DEFAULT_WIDTH = int(os.environ.get('CAMERA_DEFAULT_WIDTH', 1280))
-
-CAMERA_DEFAULT_HEIGHT = int(os.environ.get('CAMERA_DEFAULT_HEIGHT', 720))
+#CAMERA_DEFAULT_WIDTH = int(os.environ.get('CAMERA_DEFAULT_WIDTH', 1280))
+#CAMERA_DEFAULT_HEIGHT = int(os.environ.get('CAMERA_DEFAULT_HEIGHT', 720))
 
 ZM_DATA_PATH_PREFIX = os.environ.get('ZM_DATA_PATH_PREFIX', '/zoneminder/cache')
 
@@ -190,7 +189,7 @@ class YoloAnalyzer(ImageAnalyzer):
 
     def _prepare_image(self, image):
         # image resize
-        logger.info("Default width : %s Default height : %s", CAMERA_DEFAULT_WIDTH ,CAMERA_DEFAULT_HEIGHT)
+        #logger.info("Default width : %s Default height : %s", CAMERA_DEFAULT_WIDTH, CAMERA_DEFAULT_HEIGHT)
         resized_image = cv2.resize(image, (MODEL_INPUT_SIZE, MODEL_INPUT_SIZE), interpolation = cv2.INTER_CUBIC)
         canvas = np.full((MODEL_INPUT_SIZE, MODEL_INPUT_SIZE, 3), 128)
         #canvas_model_minus_height = ( MODEL_INPUT_SIZE - MODEL_INPUT_SIZE )
@@ -220,6 +219,7 @@ class YoloAnalyzer(ImageAnalyzer):
         fname = fname.replace('/var/cache/zoneminder', ZM_DATA_PATH_PREFIX)
         logger.info('Analyzing: %s', fname)
         img = cv2.imread(fname)
+        input_image_h, input_image_w, input_image_c = img.shape
         #img2 = Image(img)
         prepimg = self._prepare_image(img)
         results = self._net.infer(inputs={self._input_blob: prepimg})
@@ -230,7 +230,7 @@ class YoloAnalyzer(ImageAnalyzer):
 
         for output in results.values():
             objects = self.parseYOLOV3Output(output, MODEL_INPUT_SIZE, MODEL_INPUT_SIZE, 
-                CAMERA_DEFAULT_HEIGHT, CAMERA_DEFAULT_WIDTH, 0.4, objects)
+                input_image_h, input_image_w, 0.4, objects)
         logger.info("Found objects: %s", objects)
 
         retval = {'detections': [], 'ignored_detections': []}
