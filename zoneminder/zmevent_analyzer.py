@@ -116,7 +116,7 @@ class ImageAnalysisWrapper(object):
             url = 'http://analysis_server:8008/'
             try:
                 logger.info('POST to %s', url)
-                r = requests.post(url, json=data, timeout=10.0)
+                r = requests.post(url, json=data, timeout=20.0)
                 r.raise_for_status()
                 results = r.json()
                 break

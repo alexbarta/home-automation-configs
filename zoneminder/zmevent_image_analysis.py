@@ -151,9 +151,9 @@ class YoloAnalyzer(ImageAnalyzer):
         super(YoloAnalyzer, self).__init__(monitor_zones, hostname, net_params)
         #self._ensure_configs()
         logger.info('[YoloAnalyzer] Instantiating YOLO3 Detector...')
-        logger.info("classes: %s      labels: %s", classes, LABELS)
-        logger.info("coords: %s", coords)
-        logger.info("num: %s", num)
+        logger.info("[YoloAnalyzer] classes: %s      labels: %s", classes, LABELS)
+        logger.info("[YoloAnalyzer] coords: %s", coords)
+        logger.info("[YoloAnalyzer] num: %s", num)
         #with suppress_stdout_stderr():
             #self._net = Detector(
             #    bytes(self._config_path("yolov3.cfg"), encoding="utf-8"),
@@ -168,6 +168,9 @@ class YoloAnalyzer(ImageAnalyzer):
         self._input_blob = self._net_params[0]
         #self._net = plugin.load(network=net, config={"VPU_LOG_LEVEL": "LOG_DEBUG"})
         self._net = self._net_params[1] #, config={"VPU_LOG_LEVEL": "LOG_DEBUG"})
+
+        logger.debug('[YoloAnalyzer] _input_blob: %s', self._input_blob)
+        logger.debug('[YoloAnalyzer] _net: %s', self._net)
 
         logger.info('Done instantiating YOLO3 Detector.')
 
@@ -197,7 +200,8 @@ class YoloAnalyzer(ImageAnalyzer):
         #canvas[canvas_model_minus_height // 2 : canvas_model_minus_height // 2 + CAMERA_DEFAULT_HEIGHT, 
         #    canvas_model_minus_width // 2 : canvas_model_minus_width // 2 + CAMERA_DEFAULT_WIDTH,  :] = resized_image
         canvas[0:MODEL_INPUT_SIZE, 0:MODEL_INPUT_SIZE, :] = resized_image
-        canvas = canvas[np.newaxis, :, :, :]     # Batch size axis add  
+        canvas = canvas[np.newaxis, :, :, :]     # Batch size axis add
+        logger.debug("Image resize and transpose [NHWC to NCHW]...")  
         return canvas.transpose((0, 3, 1, 2))  # NHWC to NCHW
              
 
@@ -220,7 +224,9 @@ class YoloAnalyzer(ImageAnalyzer):
         logger.info('Analyzing: %s', fname)
         img = cv2.imread(fname)
         input_image_h, input_image_w, input_image_c = img.shape
-        #img2 = Image(img)
+        
+        logger.debug('image shape: %s %s %s', input_image_h, input_image_w, input_image_c)
+        
         prepimg = self._prepare_image(img)
         results = self._net.infer(inputs={self._input_blob: prepimg})
         logger.debug('Raw Results: %s', results)
@@ -229,6 +235,7 @@ class YoloAnalyzer(ImageAnalyzer):
         objects = []
 
         for output in results.values():
+            logger.debug("Starting inference output analysis...")
             objects = self.parseYOLOV3Output(output, MODEL_INPUT_SIZE, MODEL_INPUT_SIZE, 
                 input_image_h, input_image_w, 0.4, objects)
         logger.info("Found objects: %s", objects)

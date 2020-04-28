@@ -4,7 +4,7 @@ import json
 import cgi
 import logging
 from systemd.journal import JournalHandler
-import json
+#import json
 import sys
 import os
 
